@@ -1,0 +1,67 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
+#Practical Machine Learning
+
+Tarik Bouchnayaf
+
+
+##Background
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement - a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: http://groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset).
+
+##Introduction
+The purpose behind this project is to predict the manner the exercises are done, which is the classe variable in our case, of course we can use any other variable.
+So we're going pull the data, load, and clean it, then test few models and analyse the accuracy of each one.
+
+##Data Processing
+###load the appropriate packages
+```{r}
+library(caret)
+library(ggplot2)
+library(rpart)
+library(rpart.plot)
+library(randomForest)
+
+```
+###Download & Import Data
+```{r}
+URL_training <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
+URL_Testing <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"
+Training_Data <- read.csv(URL_training, na.strings = c("", "NA"))
+Testing_Data <- read.csv(URL_Testing, na.strings = c("", "NA"))
+```
+###Data Cleaning
+This step includes the NA removal, and filter the columns needed for our exercise, so we avoid errors and optimize the analysis.
+```{r}
+Training_Data<-Training_Data[,colSums(is.na(Training_Data)) == 0]
+Testing_Data <-Testing_Data[,colSums(is.na(Testing_Data)) == 0]
+#Delete the 7 first columns due to their irrelevance
+Training_Data <- Training_Data[,8:dim(Training_Data)[2]]
+Testing_Data <- Testing_Data[,8:dim(Testing_Data)[2]]
+```
+###Partition the Training Data
+Partition training dataset using caret into training and test with a ration  on .7,.3 respectively
+```{r}
+partition_data  <- createDataPartition(Training_Data$classe, p=0.7, list=FALSE)
+Training_Dataset <- Training_Data[partition_data, ]
+Testing_dataset  <- Training_Data[-partition_data, ]
+```
+###Models
+####1-Decision Tree
+```{r}
+DTModel <- rpart(classe ~ ., data = Training_Dataset, method = "class")
+DTPrediction <- predict(DTModel, Testing_dataset, type = "class")
+rpart.plot(DTModel, main = "Decision Tree", under = T, faclen = 0)
+#Testing the result
+confusionMatrix(DTPrediction, Testing_dataset$classe)
+```
+####1-Random Forest
+```{r}
+RFModel <- randomForest(classe ~. , data = Training_Dataset, method = "class")
+RFPrediction <- predict(RFModel, Testing_dataset, type = "class")
+confusionMatrix(RFPrediction, Testing_dataset$classe)
+```
+###Conclusion.
+The Random Forest is higher in terms of accuracy, so it's the appropriate one to use.
